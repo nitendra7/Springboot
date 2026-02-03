@@ -49,8 +49,8 @@ public class StudentService {
     }
 
     public StudentResponseDTO update(String id, StudentRequestDTO studentRequest) {
-        StudentModel student = new StudentModel();
-        student.setId(id);
+        StudentModel student = repo.findById(id)
+                .orElseThrow(() -> new StudentNotFoundException("Student not found"));
         student.setName(studentRequest.getName());
         student.setAge(studentRequest.getAge());
         student.setEmail(studentRequest.getEmail());
