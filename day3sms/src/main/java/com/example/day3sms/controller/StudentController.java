@@ -1,6 +1,8 @@
 package com.example.day3sms.controller;
 
 import com.example.day3sms.model.StudentModel;
+import com.example.day3sms.dto.*;
+
 import com.example.day3sms.service.StudentService;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -22,7 +24,7 @@ public class StudentController {
     }
 
     @PostMapping("/add")
-    public StudentModel addStudent(@RequestBody StudentModel student) {
+    public StudentResponseDTO addStudent(@RequestBody StudentModel student) {
         return service.add(student);
     }
 
