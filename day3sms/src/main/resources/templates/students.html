@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Management System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        input {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #ccc;
+        }
+        button {
+            padding: 8px 16px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        table {
+            border-collapse: collapse;
+            margin-top: 20px;
+            width: 100%;
+        }
+        th, td {
+            border: 1px solid #333;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f0f0f0;
+        }
+        .form-section {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Student Management System</h1>
+    
+    <div class="form-section">
+        <h2>Add / Update Student</h2>
+        <form id="student-form">
+            <input type="hidden" id="student-id">
+            <input type="text" id="name" placeholder="Name" required>
+            <input type="number" id="age" placeholder="Age" required>
+            <input type="email" id="email" placeholder="Email" required>
+            <button type="submit" id="submit-btn">Add Student</button>
+            <button type="button" id="cancel-btn" style="display:none;">Cancel</button>
+        </form>
+    </div>
+
+    <h2>Student List</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Age</th>
+                <th>Email</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="student-table-body">
+        </tbody>
+    </table>
+
+    <script>
+        let isEditing = false;
+
+        async function loadStudents() {
+            const response = await fetch('/api/students');
+            const students = await response.json();
+            const tableBody = document.getElementById('student-table-body');
+            tableBody.innerHTML = '';
+            
+            students.forEach(student => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${student.id}</td>
+                    <td>${student.name}</td>
+                    <td>${student.age}</td>
+                    <td>${student.email}</td>
+                    <td>
+                        <button onclick="editStudent('${student.id}', '${student.name}', ${student.age}, '${student.email}')">Edit</button>
+                        <button onclick="deleteStudent('${student.id}')">Delete</button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        document.getElementById('student-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const id = document.getElementById('student-id').value;
+            const name = document.getElementById('name').value;
+            const age = document.getElementById('age').value;
+            const email = document.getElementById('email').value;
+            
+            const student = { name, age: parseInt(age), email };
+            
+            if (isEditing) {
+                await fetch(`/students/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(student)
+                });
+            } else {
+                await fetch('/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(student)
+                });
+            }
+            
+            resetForm();
+            loadStudents();
+        });
+
+        function editStudent(id, name, age, email) {
+            document.getElementById('student-id').value = id;
+            document.getElementById('name').value = name;
+            document.getElementById('age').value = age;
+            document.getElementById('email').value = email;
+            document.getElementById('submit-btn').textContent = 'Update Student';
+            document.getElementById('cancel-btn').style.display = 'inline-block';
+            isEditing = true;
+        }
+
+        async function deleteStudent(id) {
+            if (!confirm('Delete this student?')) return;
+            await fetch(`/students/${id}`, { method: 'DELETE' });
+            loadStudents();
+        }
+
+        function resetForm() {
+            document.getElementById('student-form').reset();
+            document.getElementById('student-id').value = '';
+            document.getElementById('submit-btn').textContent = 'Add Student';
+            document.getElementById('cancel-btn').style.display = 'none';
+            isEditing = false;
+        }
+
+        document.getElementById('cancel-btn').addEventListener('click', resetForm);
+        loadStudents();
+    </script>
+</body>
+</html>

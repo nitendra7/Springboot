@@ -9,6 +9,7 @@ import com.example.day3sms.repository.StudentRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class StudentService {
@@ -69,6 +70,29 @@ public class StudentService {
             throw new StudentNotFoundException("Student with this ID doesn't exist.");
         }
         repo.deleteById(id);
+    }
+
+    public StudentResponseDTO partialUpdate(String id, Map<String, Object> updates) {
+        StudentModel student = repo.findById(id)
+                .orElseThrow(() -> new StudentNotFoundException("Student not found"));
+        
+        if (updates.containsKey("name")) {
+            student.setName((String) updates.get("name"));
+        }
+        if (updates.containsKey("age")) {
+            student.setAge(((Number) updates.get("age")).intValue());
+        }
+        if (updates.containsKey("email")) {
+            student.setEmail((String) updates.get("email"));
+        }
+        
+        StudentModel saved = repo.save(student);
+        return new StudentResponseDTO(
+                saved.getId(),
+                saved.getName(),
+                saved.getAge(),
+                saved.getEmail()
+        );
     }
 
 }
