@@ -5,6 +5,7 @@ import com.example.day3sms.dto.*;
 
 import com.example.day3sms.repository.StudentRepository;
 import com.example.day3sms.service.StudentService;
+import com.example.day3sms.util.JwtUtil;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
@@ -18,11 +19,20 @@ import java.util.Map;
 public class StudentController {
 
     private final StudentService service;
-    private final StudentRepository studentRepository;
+    //private final StudentRepository studentRepository;
+    private final JwtUtil jwtUtil;
 
-    public StudentController(StudentService service, StudentRepository studentRepository) {
+    public StudentController(StudentService service, JwtUtil jwtUtil) {
         this.service = service;
-        this.studentRepository = studentRepository;
+        this.jwtUtil = jwtUtil;
+    }
+
+    private void checkToken(String authHeader){
+        if (authHeader==null || !authHeader.startsWith("Bearer ")){
+            throw new RuntimeException("Invalid Token");
+        }
+        String token=authHeader.substring(7);
+        jwtUtil.validateTokenAndGetEmail(token);
     }
 
     @GetMapping("/students")
@@ -33,38 +43,47 @@ public class StudentController {
     // API Endpoints
     @GetMapping("/api/students")
     @ResponseBody
-    public List<StudentResponseDTO> getAllStudents() {
-        return studentRepository.findAll()
-                .stream()
-                .map(student -> new StudentResponseDTO(
-                        student.getId(),
-                        student.getName(),
-                        student.getAge(),
-                        student.getEmail()
-                )).toList();
+    public List<StudentResponseDTO> getAllStudents(
+            @RequestHeader("Authorization") String authHeader) {
+        checkToken(authHeader);
+        return service.getAllStudents();
     }
 
     @PostMapping("/add")
     @ResponseBody
-    public StudentResponseDTO addStudent(@Valid @RequestBody StudentRequestDTO student) {
+    public StudentResponseDTO addStudent(
+            @RequestHeader(value = "Authorization",required = false) String authHeader,
+            @Valid @RequestBody StudentRequestDTO student) {
+        checkToken(authHeader);
         return service.add(student);
     }
 
     @PutMapping("/students/{id}")
     @ResponseBody
-    public StudentResponseDTO updateStudent(@PathVariable String id, @Valid @RequestBody StudentRequestDTO student) {
+    public StudentResponseDTO updateStudent(
+            @RequestHeader("Authorization") String authHeader,
+            @PathVariable String id, 
+            @Valid @RequestBody StudentRequestDTO student) {
+        checkToken(authHeader);
         return service.update(id, student);
     }
 
     @PatchMapping("/students/{id}")
     @ResponseBody
-    public StudentResponseDTO partialUpdateStudent(@PathVariable String id, @RequestBody Map<String, Object> updates) {
+    public StudentResponseDTO partialUpdateStudent(
+            @RequestHeader("Authorization") String authHeader,
+            @PathVariable String id, 
+            @RequestBody Map<String, Object> updates) {
+        checkToken(authHeader);
         return service.partialUpdate(id, updates);
     }
 
     @DeleteMapping("/students/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteStudent(@PathVariable String id) {
+    public void deleteStudent(
+            @RequestHeader("Authorization") String authHeader,
+            @PathVariable String id) {
+        checkToken(authHeader);
         service.delete(id);
     }
 
